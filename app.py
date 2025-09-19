@@ -12,14 +12,24 @@ import random
 from typing import List, Dict, Any
 import re
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv is optional for cloud deployment
+    pass
 import uuid
 
-# Load environment variables
-load_dotenv()
-
 # Import query logger
-from query_logger import log_user_question, query_logger
+try:
+    from query_logger import log_user_question, query_logger
+    LOGGING_ENABLED = True
+except ImportError:
+    # Fallback if query_logger not available
+    def log_user_question(*args, **kwargs):
+        pass
+    query_logger = None
+    LOGGING_ENABLED = False
 
 # Try to import AI translator (optional)
 try:
@@ -1128,6 +1138,12 @@ def render_analytics_tab():
     """רינדור טאב Analytics"""
     
     st.markdown("### 📊 ניתוח שאלות משתמשים")
+    
+    # Check if logging is available
+    if not LOGGING_ENABLED or query_logger is None:
+        st.warning("📊 מערכת הלוגים לא זמינה - Analytics מושבת")
+        st.info("💡 במצב Cloud, Analytics יהיה זמין רק עם קבצי לוג מקומיים")
+        return
     
     # Quick stats for today
     from datetime import datetime
